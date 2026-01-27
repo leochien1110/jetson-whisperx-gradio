@@ -1,0 +1,22 @@
+--- a/pyannote/audio/core/model.py
++++ b/pyannote/audio/core/model.py
+@@ -198,7 +198,7 @@
+                     revision=revision,
+                     library_name="pyannote",
+                     library_version=__version__,
+-                    use_auth_token=use_auth_token,
++                    token=use_auth_token,
+                     cache_dir=cache_dir,
+                 )
+ 
+--- a/pyannote/audio/core/pipeline.py
++++ b/pyannote/audio/core/pipeline.py
+@@ -112,7 +112,7 @@
+                     # proxies=None,
+                     # etag_timeout=10,
+                     # resume_download=False,
+-                    use_auth_token=use_auth_token,
++                    token=use_auth_token,
+                 )
+ 
+             except EnvironmentError:

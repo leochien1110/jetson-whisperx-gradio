@@ -1,0 +1,22 @@
+services:
+  whisperx-gradio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whisperx-gradio
+    restart: always
+    runtime: nvidia
+    network_mode: host
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - PYTHONUNBUFFERED=1
+    privileged: true
+    volumes:
+      - ./outputs:/app/outputs
+      - ~/.cache:/root/.cache
+      - /sys:/sys:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

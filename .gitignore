@@ -1,0 +1,30 @@
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Docker
+docker-compose.override.yml
+
+# Application Outputs
+outputs/*
+!outputs/.gitkeep
+*.srt
+*.mp3
+*.wav
+*.m4a
+*.log
+
+# System
+.DS_Store
+Thumbs.db
+*.service
