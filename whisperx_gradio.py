@@ -184,10 +184,15 @@ def get_jetson_stats():
         import subprocess
         import re
         
-        # Run tegrastats once to get current stats
-        result = subprocess.run(['tegrastats', '--interval', '100'], 
-                              capture_output=True, text=True, timeout=0.5)
-        output = result.stdout
+        # Run tegrastats with system timeout to force a single snapshot
+        # 'timeout' command returns 124 if it times out, which is expected here
+        try:
+             result = subprocess.run(['timeout', '0.2', 'tegrastats', '--interval', '100'], 
+                                   capture_output=True, text=True)
+             output = result.stdout
+        except FileNotFoundError:
+             # If timeout or tegrastats is not found
+             output = ""
         
         stats = {
             "gpu_util": "N/A",
@@ -207,10 +212,13 @@ def get_jetson_stats():
         if gr3d_match:
             stats["gpu_util"] = f"{gr3d_match.group(1)}%"
         
-        # GPU frequency
+        # GPU frequency (Handle 0% case where frequency might be missing)
+        # Matches: GR3D_FREQ 0%  OR  GR3D_FREQ 15%@114MHz
         gr3d_freq_match = re.search(r'GR3D_FREQ\s+\d+%@(\d+)', output)
         if gr3d_freq_match:
             stats["gpu_freq"] = f"{gr3d_freq_match.group(1)} MHz"
+        elif "GR3D_FREQ 0%" in output:
+             stats["gpu_freq"] = "Idle"
         
         # VRAM usage (Unified memory on Jetson)
         ram_match = re.search(r'RAM\s+(\d+)/(\d+)MB', output)
@@ -218,20 +226,31 @@ def get_jetson_stats():
             stats["vram_used"] = f"{ram_match.group(1)} MB"
             stats["vram_total"] = f"{ram_match.group(2)} MB"
         
-        # Total Power (VDD_IN in mW)
-        power_match = re.search(r'VDD_IN\s+(\d+)/(\d+)', output)
+        # Total Power
+        # Supports both Xavier (VDD_IN) and Orin (VIN_SYS_5V0)
+        power_match = re.search(r'(?:VDD_IN|VIN_SYS_5V0)\s+(\d+)(?:mW)?/', output)
         if power_match:
             power_mw = int(power_match.group(1))
             stats["power_total"] = f"{power_mw/1000:.2f} W"
         
-        # GPU+CPU Power (VDD_CPU_GPU_CV)
-        gpu_power_match = re.search(r'VDD_CPU_GPU_CV\s+(\d+)/(\d+)', output)
+        # GPU+CPU Power
+        # Xavier: VDD_CPU_GPU_CV, Orin: VDD_GPU_SOC + VDD_CPU_CV
+        gpu_power_match = re.search(r'VDD_CPU_GPU_CV\s+(\d+)(?:mW)?/', output)
         if gpu_power_match:
             gpu_power_mw = int(gpu_power_match.group(1))
             stats["power_gpu"] = f"{gpu_power_mw/1000:.2f} W"
-        
+        else:
+            # Try Orin separate rails
+            gpu_soc_match = re.search(r'VDD_GPU_SOC\s+(\d+)(?:mW)?/', output)
+            cpu_cv_match = re.search(r'VDD_CPU_CV\s+(\d+)(?:mW)?/', output)
+            if gpu_soc_match:
+                p_gpu = int(gpu_soc_match.group(1))
+                p_cpu = int(cpu_cv_match.group(1)) if cpu_cv_match else 0
+                stats["power_gpu"] = f"{(p_gpu + p_cpu)/1000:.2f} W"
+
         # GPU Temperature
-        temp_match = re.search(r'GPU@([\d.]+)C', output)
+        # Try specific GPU sensor first, then fallback to others
+        temp_match = re.search(r'(?:GPU|gpu|soc0|tj)@([\d.]+)C', output)
         if temp_match:
             stats["temp_gpu"] = f"{temp_match.group(1)}°C"
         

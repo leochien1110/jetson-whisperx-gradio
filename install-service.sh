@@ -42,7 +42,6 @@ Requires=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=$WORKING_DIR
-ExecStartPre=/usr/bin/docker compose build
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
 ExecReload=/usr/bin/docker compose restart

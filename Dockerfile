@@ -58,10 +58,11 @@ RUN pip3 install --index-url https://pypi.org/simple --no-cache-dir "numpy<2.0"
 # 2. Patch pyannote.audio to compatible with huggingface-hub >= 0.20
 # Replace 'use_auth_token=use_auth_token' with 'token=use_auth_token' in pyannote core files
 # This fixes "TypeError: hf_hub_download() got an unexpected keyword argument 'use_auth_token'"
-COPY pyannote-compatibility.patch /tmp/pyannote-compatibility.patch
-RUN cd /usr/local/lib/python3.10/dist-packages && \
-    patch -p1 < /tmp/pyannote-compatibility.patch && \
-    rm /tmp/pyannote-compatibility.patch
+# COPY pyannote-compatibility.patch /tmp/pyannote-compatibility.patch
+RUN echo "Applying critical fix..." && \
+    cd /usr/local/lib/python3.10/dist-packages/pyannote/audio/core && \
+    sed -i 's/use_auth_token=use_auth_token/token=use_auth_token/g' model.py && \
+    sed -i 's/use_auth_token=use_auth_token/token=use_auth_token/g' pipeline.py
 
 # Copy application code
 COPY whisperx_gradio.py .

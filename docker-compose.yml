@@ -13,6 +13,8 @@ services:
     privileged: true
     volumes:
       - ./outputs:/app/outputs
+      - ./whisperx_gradio.py:/app/whisperx_gradio.py
+      - /usr/bin/tegrastats:/usr/bin/tegrastats:ro
       - ~/.cache:/root/.cache
       - /sys:/sys:ro
     logging:
